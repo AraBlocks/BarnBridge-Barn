@@ -5,7 +5,7 @@ import "../interfaces/IRewards.sol";
 
 contract BarnMock {
     IRewards public r;
-    uint256 public bondStaked;
+    uint256 public araStaked;
     mapping(address => uint256) private balances;
 
     function setRewards(address rewards) public {
@@ -20,7 +20,7 @@ contract BarnMock {
         callRegisterUserAction(user);
 
         balances[user] = balances[user] + amount;
-        bondStaked = bondStaked + amount;
+        araStaked = araStaked + amount;
     }
 
     function withdraw(address user, uint256 amount) public {
@@ -29,7 +29,7 @@ contract BarnMock {
         callRegisterUserAction(user);
 
         balances[user] = balances[user] - amount;
-        bondStaked = bondStaked - amount;
+        araStaked = araStaked - amount;
     }
 
     function balanceOf(address user) public view returns (uint256) {

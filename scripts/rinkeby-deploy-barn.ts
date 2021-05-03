@@ -28,12 +28,12 @@ async function main () {
     );
     console.log(`Barn deployed at: ${diamond.address}`);
 
-    const rewards = await deploy.deployContract('Rewards', [_dao, _bond, diamond.address]);
+    const rewards = await deploy.deployContract('Rewards', [_dao, _ara, diamond.address]);
     console.log(`Rewards deployed at: ${rewards.address}`);
 
     console.log('Calling initBarn');
     const barn = (await diamondAsFacet(diamond, 'BarnFacet')) as BarnFacet;
-    await barn.initBarn(_bond, rewards.address);
+    await barn.initBarn(_ara, rewards.address);
 }
 
 async function getFacets (): Promise<Contract[]> {

@@ -5,7 +5,7 @@ pragma experimental ABIEncoderV2;
 import "../libraries/LibBarnStorage.sol";
 
 interface IBarn {
-    // deposit allows a user to add more bond to his staked balance
+    // deposit allows a user to add more ara to his staked balance
     function deposit(uint256 amount) external;
 
     // withdraw allows a user to withdraw funds if the balance is not locked
@@ -23,10 +23,10 @@ interface IBarn {
     // lock the balance of a proposal creator until the voting ends; only callable by DAO
     function lockCreatorBalance(address user, uint256 timestamp) external;
 
-    // balanceOf returns the current BOND balance of a user (bonus not included)
+    // balanceOf returns the current ARA balance of a user (bonus not included)
     function balanceOf(address user) external view returns (uint256);
 
-    // balanceAtTs returns the amount of BOND that the user currently staked (bonus NOT included)
+    // balanceAtTs returns the amount of ARA that the user currently staked (bonus NOT included)
     function balanceAtTs(address user, uint256 timestamp) external view returns (uint256);
 
     // stakeAtTs returns the Stake object of the user that was valid at `timestamp`
@@ -38,12 +38,12 @@ interface IBarn {
     // votingPowerAtTs returns the voting power (bonus included) + delegated voting power for a user at a point in time
     function votingPowerAtTs(address user, uint256 timestamp) external view returns (uint256);
 
-    // bondStaked returns the total raw amount of BOND staked at the current block
-    function bondStaked() external view returns (uint256);
+    // araStaked returns the total raw amount of ARA staked at the current block
+    function araStaked() external view returns (uint256);
 
-    // bondStakedAtTs returns the total raw amount of BOND users have deposited into the contract
+    // araStakedAtTs returns the total raw amount of ARA users have deposited into the contract
     // it does not include any bonus
-    function bondStakedAtTs(uint256 timestamp) external view returns (uint256);
+    function araStakedAtTs(uint256 timestamp) external view returns (uint256);
 
     // delegatedPower returns the total voting power that a user received from other users
     function delegatedPower(address user) external view returns (uint256);
@@ -53,7 +53,7 @@ interface IBarn {
 
     // multiplierAtTs calculates the multiplier at a given timestamp based on the user's stake a the given timestamp
     // it includes the decay mechanism
-    function multiplierAtTs(address user, uint256 timestamp) external view returns (uint256);
+    function multiplierAtTs(address user, uint256 timebstamp) external view returns (uint256);
 
     // userLockedUntil returns the timestamp until the user's balance is locked
     function userLockedUntil(address user) external view returns (uint256);
@@ -61,6 +61,6 @@ interface IBarn {
     // userDidDelegate returns the address to which a user delegated their voting power; address(0) if not delegated
     function userDelegatedTo(address user) external view returns (address);
 
-    // bondCirculatingSupply returns the current circulating supply of BOND
-    function bondCirculatingSupply() external view returns (uint256);
+    // araCirculatingSupply returns the current circulating supply of ARA
+    function araCirculatingSupply() external view returns (uint256);
 }

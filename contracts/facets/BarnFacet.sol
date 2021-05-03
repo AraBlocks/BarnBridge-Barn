@@ -21,8 +21,8 @@ contract BarnFacet {
     event DelegatedPowerIncreased(address indexed from, address indexed to, uint256 amount, uint256 to_newDelegatedPower);
     event DelegatedPowerDecreased(address indexed from, address indexed to, uint256 amount, uint256 to_newDelegatedPower);
 
-    function initBarn(address _bond, address _rewards) public {
-        require(_bond != address(0), "BOND address must not be 0x0");
+    function initBarn(address _ara, address _rewards) public {
+        require(_ara != address(0), "ARA address must not be 0x0");
 
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
 
@@ -31,16 +31,16 @@ contract BarnFacet {
 
         ds.initialized = true;
 
-        ds.bond = IERC20(_bond);
+        ds.ara = IERC20(_ara);
         ds.rewards = IRewards(_rewards);
     }
 
-    // deposit allows a user to add more bond to his staked balance
+    // deposit allows a user to add more ara to his staked balance
     function deposit(uint256 amount) public {
         require(amount > 0, "Amount must be greater than 0");
 
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
-        uint256 allowance = ds.bond.allowance(msg.sender, address(this));
+        uint256 allowance = ds.ara.allowance(msg.sender, address(this));
         require(allowance >= amount, "Token allowance too small");
 
         // this must be called before the user's balance is updated so the rewards contract can calculate
@@ -51,7 +51,7 @@ contract BarnFacet {
 
         uint256 newBalance = balanceOf(msg.sender).add(amount);
         _updateUserBalance(ds.userStakeHistory[msg.sender], newBalance);
-        _updateLockedBond(bondStakedAtTs(block.timestamp).add(amount));
+        _updateLockedAra(araStakedAtTs(block.timestamp).add(amount));
 
         address delegatedTo = userDelegatedTo(msg.sender);
         if (delegatedTo != address(0)) {
@@ -61,7 +61,7 @@ contract BarnFacet {
             emit DelegatedPowerIncreased(msg.sender, delegatedTo, amount, newDelegatedPower);
         }
 
-        ds.bond.transferFrom(msg.sender, address(this), amount);
+        ds.ara.transferFrom(msg.sender, address(this), amount);
 
         emit Deposit(msg.sender, amount, newBalance);
     }
@@ -83,7 +83,7 @@ contract BarnFacet {
         }
 
         _updateUserBalance(ds.userStakeHistory[msg.sender], balance.sub(amount));
-        _updateLockedBond(bondStakedAtTs(block.timestamp).sub(amount));
+        _updateLockedAra(araStakedAtTs(block.timestamp).sub(amount));
 
         address delegatedTo = userDelegatedTo(msg.sender);
         if (delegatedTo != address(0)) {
@@ -93,7 +93,7 @@ contract BarnFacet {
             emit DelegatedPowerDecreased(msg.sender, delegatedTo, amount, newDelegatedPower);
         }
 
-        ds.bond.transfer(msg.sender, amount);
+        ds.ara.transfer(msg.sender, amount);
 
         emit Withdraw(msg.sender, amount, balance.sub(amount));
     }
@@ -154,12 +154,12 @@ contract BarnFacet {
         return delegate(address(0));
     }
 
-    // balanceOf returns the current BOND balance of a user (bonus not included)
+    // balanceOf returns the current ARA balance of a user (bonus not included)
     function balanceOf(address user) public view returns (uint256) {
         return balanceAtTs(user, block.timestamp);
     }
 
-    // balanceAtTs returns the amount of BOND that the user currently staked (bonus NOT included)
+    // balanceAtTs returns the amount of ARA that the user currently staked (bonus NOT included)
     function balanceAtTs(address user, uint256 timestamp) public view returns (uint256) {
         LibBarnStorage.Stake memory stake = stakeAtTs(user, timestamp);
 
@@ -220,15 +220,15 @@ contract BarnFacet {
         return ownVotingPower.add(delegatedVotingPower);
     }
 
-    // bondStaked returns the total raw amount of BOND staked at the current block
-    function bondStaked() public view returns (uint256) {
-        return bondStakedAtTs(block.timestamp);
+    // araStaked returns the total raw amount of ARA staked at the current block
+    function araStaked() public view returns (uint256) {
+        return araStakedAtTs(block.timestamp);
     }
 
-    // bondStakedAtTs returns the total raw amount of BOND users have deposited into the contract
+    // araStakedAtTs returns the total raw amount of ARA users have deposited into the contract
     // it does not include any bonus
-    function bondStakedAtTs(uint256 timestamp) public view returns (uint256) {
-        return _checkpointsBinarySearch(LibBarnStorage.barnStorage().bondStakedHistory, timestamp);
+    function araStakedAtTs(uint256 timestamp) public view returns (uint256) {
+        return _checkpointsBinarySearch(LibBarnStorage.barnStorage().araStakedHistory, timestamp);
     }
 
     // delegatedPower returns the total voting power that a user received from other users
@@ -362,14 +362,14 @@ contract BarnFacet {
         }
     }
 
-    // _updateLockedBond stores the new `amount` into the BOND locked history
-    function _updateLockedBond(uint256 amount) internal {
+    // _updateLockedAra stores the new `amount` into the ARA locked history
+    function _updateLockedAra(uint256 amount) internal {
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
 
-        if (ds.bondStakedHistory.length == 0 || ds.bondStakedHistory[ds.bondStakedHistory.length - 1].timestamp < block.timestamp) {
-            ds.bondStakedHistory.push(LibBarnStorage.Checkpoint(block.timestamp, amount));
+        if (ds.araStakedHistory.length == 0 || ds.araStakedHistory[ds.araStakedHistory.length - 1].timestamp < block.timestamp) {
+            ds.araStakedHistory.push(LibBarnStorage.Checkpoint(block.timestamp, amount));
         } else {
-            LibBarnStorage.Checkpoint storage old = ds.bondStakedHistory[ds.bondStakedHistory.length - 1];
+            LibBarnStorage.Checkpoint storage old = ds.araStakedHistory[ds.araStakedHistory.length - 1];
             old.amount = amount;
         }
     }

@@ -9,15 +9,15 @@ contract MulticallMock {
     using SafeMath for uint256;
 
     IBarn barn;
-    IERC20 bond;
+    IERC20 ara;
 
-    constructor(address _barn, address _bond) {
+    constructor(address _barn, address _ara) {
         barn = IBarn(_barn);
-        bond = IERC20(_bond);
+        ara = IERC20(_ara);
     }
 
     function multiDelegate(uint256 amount, address user1, address user2) public {
-        bond.approve(address(barn), amount);
+        ara.approve(address(barn), amount);
 
         barn.deposit(amount);
         barn.delegate(user1);
@@ -26,7 +26,7 @@ contract MulticallMock {
     }
 
     function multiDeposit(uint256 amount) public {
-        bond.approve(address(barn), amount.mul(3));
+        ara.approve(address(barn), amount.mul(3));
 
         barn.deposit(amount);
         barn.deposit(amount);

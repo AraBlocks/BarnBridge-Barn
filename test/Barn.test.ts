@@ -11,7 +11,7 @@ import { moveAtTimestamp } from './helpers/helpers';
 describe('Barn', function () {
     const amount = BigNumber.from(100).mul(BigNumber.from(10).pow(18));
 
-    let barn: BarnFacet, bond: Erc20Mock, rewardsMock: RewardsMock, changeRewards: ChangeRewardsFacet;
+    let barn: BarnFacet, ara: Erc20Mock, rewardsMock: RewardsMock, changeRewards: ChangeRewardsFacet;
 
     let user: Signer, userAddress: string;
     let happyPirate: Signer, happyPirateAddress: string;
@@ -21,7 +21,7 @@ describe('Barn', function () {
 
     before(async function () {
         await setupSigners();
-        bond = (await deploy.deployContract('ERC20Mock')) as Erc20Mock;
+        ara = (await deploy.deployContract('ERC20Mock')) as Erc20Mock;
 
         const cutFacet = await deploy.deployContract('DiamondCutFacet');
         const loupeFacet = await deploy.deployContract('DiamondLoupeFacet');
@@ -38,7 +38,7 @@ describe('Barn', function () {
 
         changeRewards = (await diamondAsFacet(diamond, 'ChangeRewardsFacet')) as ChangeRewardsFacet;
         barn = (await diamondAsFacet(diamond, 'BarnFacet')) as BarnFacet;
-        await barn.initBarn(bond.address, rewardsMock.address);
+        await barn.initBarn(ara.address, rewardsMock.address);
     });
 
     beforeEach(async function () {
@@ -86,15 +86,15 @@ describe('Barn', function () {
             await prepareAccount(user, amount);
             await barn.connect(user).deposit(amount);
 
-            expect(await bond.transferFromCalled()).to.be.true;
-            expect(await bond.balanceOf(barn.address)).to.be.equal(amount);
+            expect(await ara.transferFromCalled()).to.be.true;
+            expect(await ara.balanceOf(barn.address)).to.be.equal(amount);
         });
 
-        it('updates the total of bond locked', async function () {
+        it('updates the total of ara locked', async function () {
             await prepareAccount(user, amount);
             await barn.connect(user).deposit(amount);
 
-            expect(await barn.bondStaked()).to.be.equal(amount);
+            expect(await barn.araStaked()).to.be.equal(amount);
         });
 
         it('updates the delegated user\'s voting power if user delegated his balance', async function () {
@@ -110,9 +110,9 @@ describe('Barn', function () {
         });
 
         it('works with multiple deposit in same block', async function () {
-            const multicall = (await deploy.deployContract('MulticallMock', [barn.address, bond.address])) as MulticallMock;
+            const multicall = (await deploy.deployContract('MulticallMock', [barn.address, ara.address])) as MulticallMock;
 
-            await bond.mint(multicall.address, amount.mul(5));
+            await ara.mint(multicall.address, amount.mul(5));
 
             await multicall.multiDeposit(amount);
 
@@ -181,10 +181,10 @@ describe('Barn', function () {
         });
     });
 
-    describe('bondStakedAtTs', function () {
+    describe('araStakedAtTs', function () {
         it('returns 0 if no checkpoint', async function () {
             const ts = await helpers.getLatestBlockTimestamp();
-            expect(await barn.bondStakedAtTs(ts)).to.be.equal(0);
+            expect(await barn.araStakedAtTs(ts)).to.be.equal(0);
         });
 
         it('returns 0 if timestamp older than first checkpoint', async function () {
@@ -193,7 +193,7 @@ describe('Barn', function () {
 
             const ts = await helpers.getLatestBlockTimestamp();
 
-            expect(await barn.bondStakedAtTs(ts - 1)).to.be.equal(0);
+            expect(await barn.araStakedAtTs(ts - 1)).to.be.equal(0);
         });
 
         it('returns correct balance if timestamp newer than latest checkpoint', async function () {
@@ -202,7 +202,7 @@ describe('Barn', function () {
 
             const ts = await helpers.getLatestBlockTimestamp();
 
-            expect(await barn.bondStakedAtTs(ts + 1)).to.be.equal(amount);
+            expect(await barn.araStakedAtTs(ts + 1)).to.be.equal(amount);
         });
 
         it('returns correct balance if timestamp between checkpoints', async function () {
@@ -214,12 +214,12 @@ describe('Barn', function () {
             await helpers.moveAtTimestamp(ts + 30);
             await barn.connect(user).deposit(amount);
 
-            expect(await barn.bondStakedAtTs(ts + 15)).to.be.equal(amount);
+            expect(await barn.araStakedAtTs(ts + 15)).to.be.equal(amount);
 
             await helpers.moveAtTimestamp(ts + 60);
             await barn.connect(user).deposit(amount);
 
-            expect(await barn.bondStakedAtTs(ts + 45)).to.be.equal(amount.mul(2));
+            expect(await barn.araStakedAtTs(ts + 45)).to.be.equal(amount.mul(2));
         });
     });
 
@@ -265,22 +265,22 @@ describe('Barn', function () {
             await prepareAccount(user, amount.mul(2));
             await barn.connect(user).deposit(amount.mul(2));
 
-            expect(await bond.balanceOf(barn.address)).to.be.equal(amount.mul(2));
+            expect(await ara.balanceOf(barn.address)).to.be.equal(amount.mul(2));
 
             await barn.connect(user).withdraw(amount);
 
-            expect(await bond.transferCalled()).to.be.true;
-            expect(await bond.balanceOf(userAddress)).to.be.equal(amount);
-            expect(await bond.balanceOf(barn.address)).to.be.equal(amount);
+            expect(await ara.transferCalled()).to.be.true;
+            expect(await ara.balanceOf(userAddress)).to.be.equal(amount);
+            expect(await ara.balanceOf(barn.address)).to.be.equal(amount);
         });
 
-        it('updates the total of bond locked', async function () {
+        it('updates the total of ara locked', async function () {
             await prepareAccount(user, amount);
             await barn.connect(user).deposit(amount);
-            expect(await barn.bondStaked()).to.be.equal(amount);
+            expect(await barn.araStaked()).to.be.equal(amount);
 
             await barn.connect(user).withdraw(amount);
-            expect(await barn.bondStaked()).to.be.equal(0);
+            expect(await barn.araStaked()).to.be.equal(0);
         });
 
         it('updates the delegated user\'s voting power if user delegated his balance', async function () {
@@ -406,7 +406,7 @@ describe('Barn', function () {
             expect(await barn.votingPower(userAddress)).to.be.equal(amount);
         });
 
-        it('returns adjusted balance if user locked bond', async function () {
+        it('returns adjusted balance if user locked ara', async function () {
             await prepareAccount(user, amount);
             await barn.connect(user).deposit(amount);
 
@@ -586,9 +586,9 @@ describe('Barn', function () {
         });
 
         it('works with multiple calls in the same block', async function () {
-            const multicall = (await deploy.deployContract('MulticallMock', [barn.address, bond.address])) as MulticallMock;
+            const multicall = (await deploy.deployContract('MulticallMock', [barn.address, ara.address])) as MulticallMock;
 
-            await bond.mint(multicall.address, amount);
+            await ara.mint(multicall.address, amount);
 
             await multicall.multiDelegate(amount, userAddress, happyPirateAddress);
 
@@ -748,8 +748,8 @@ describe('Barn', function () {
     }
 
     async function prepareAccount (account: Signer, balance: BigNumber) {
-        await bond.mint(await account.getAddress(), balance);
-        await bond.connect(account).approve(barn.address, balance);
+        await ara.mint(await account.getAddress(), balance);
+        await ara.connect(account).approve(barn.address, balance);
     }
 
     function multiplierAtTs (expiryTs: number, ts: number): BigNumber {
